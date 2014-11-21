@@ -241,7 +241,7 @@ public class FramePersonas extends javax.swing.JFrame {
             }
         });
 
-        jComboTipo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "XSTREAM", "JAXB", "XML", "SERIALIZADO" }));
+        jComboTipo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "XSTREAM", "JAXB", "XML", "SERIALIZADO", "GSON" }));
         jComboTipo.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
                 jComboTipoItemStateChanged(evt);

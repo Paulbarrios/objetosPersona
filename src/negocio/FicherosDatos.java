@@ -57,7 +57,8 @@ public class FicherosDatos {
             case "XSTREAM" : this.tipo = TiposToXML.XSTREAM; break;
             case "JAXB": this.tipo = TiposToXML.JAXB; break;
             case "XML": this.tipo = TiposToXML.XML; break;
-            case "SERIALIZADO": this.tipo = TiposToXML.SERIALIZADO; break;            
+            case "SERIALIZADO": this.tipo = TiposToXML.SERIALIZADO; break; 
+            case "GSON": this.tipo = TiposToXML.GSON; break;
         }
     }
 }

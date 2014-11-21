@@ -9,6 +9,6 @@ package factoria;
  * @author profesor
  */
 public enum TiposToXML {
-    XSTREAM,JAXB,XML,SERIALIZADO
+    XSTREAM,JAXB,XML,SERIALIZADO,GSON
     
 }
