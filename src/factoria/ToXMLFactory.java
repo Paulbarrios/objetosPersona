@@ -4,6 +4,7 @@
  */
 package factoria;
 
+import static factoria.TiposToXML.GSON;
 import static factoria.TiposToXML.JAXB;
 import static factoria.TiposToXML.SERIALIZADO;
 import static factoria.TiposToXML.XML;
@@ -26,6 +27,7 @@ public class ToXMLFactory {
             case XML: interfaz = new XMLMio(); break;
             case SERIALIZADO: interfaz = new SerializadoMio(); break;
             case GSON: interfaz = new gsonMio(); break;
+            case JACKSON: interfaz = new jacksonMio(); break;
                 
             
         }

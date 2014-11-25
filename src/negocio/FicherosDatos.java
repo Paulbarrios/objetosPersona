@@ -59,6 +59,7 @@ public class FicherosDatos {
             case "XML": this.tipo = TiposToXML.XML; break;
             case "SERIALIZADO": this.tipo = TiposToXML.SERIALIZADO; break; 
             case "GSON": this.tipo = TiposToXML.GSON; break;
+            case "JACKSON": this.tipo = TiposToXML.JACKSON; break;
         }
     }
 }

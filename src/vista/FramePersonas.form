@@ -303,12 +303,13 @@
     <Component class="javax.swing.JComboBox" name="jComboTipo">
       <Properties>
         <Property name="model" type="javax.swing.ComboBoxModel" editor="org.netbeans.modules.form.editors2.ComboBoxModelEditor">
-          <StringArray count="5">
+          <StringArray count="6">
             <StringItem index="0" value="XSTREAM"/>
             <StringItem index="1" value="JAXB"/>
             <StringItem index="2" value="XML"/>
             <StringItem index="3" value="SERIALIZADO"/>
             <StringItem index="4" value="GSON"/>
+            <StringItem index="5" value="JACKSON"/>
           </StringArray>
         </Property>
       </Properties>
