@@ -9,14 +9,19 @@ import datos.Persona;
 import java.io.File;
 import java.io.FileReader;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 import negocio.FicherosDatos;
+import org.jdom2.Document;
+import org.jdom2.Element;
 import util.Constantes;
 
 /**
@@ -28,23 +33,41 @@ public class FramePersonas extends javax.swing.JFrame {
     /**
      * Creates new form FramePersonas
      */
+    
+    private Document document;
+    private String rutaBD = null;
+     
+    FicherosDatos fd = new FicherosDatos();
+    
     int idActivo ;
     private HashMap<Integer, Persona> personasMemoria;
     
     public FramePersonas() {
-        initComponents();
         leerProperties();
-
+        initComponents();
+        
         DefaultTableModel model = new DefaultTableModel();
 
         model.addColumn("ID");
         model.addColumn("NOMBRE");
 
-
-//        model.addRow(new Object[]{"1", "Oscar"});
-
         jTable1.setModel(model);
+        
+        if(new File(this.rutaBD + "/personas").exists()){
+            this.document = fd.cargarPersonasXML(this.rutaBD + "/personas");
+            cargarTabla(document);
+        }else{
+            this.document = new Document(new Element("Personas"));
+        }
 
+        jTable1.getModel().addTableModelListener(new TableModelListener() {
+
+            @Override
+            public void tableChanged(TableModelEvent tme) {
+                //tme.getType() == TableModelEvent.UPDATE
+                }
+            });
+        
 
         jTable1.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
@@ -319,14 +342,23 @@ public class FramePersonas extends javax.swing.JFrame {
         int id = 0;
         try {
             id = Integer.parseInt(textID.getText());
-            HashMap<Integer, Persona> arrayPersonas = deTablaAArray();
-            for (Integer p : arrayPersonas.keySet()) {
-                if (id == p) {
+            for (int i = 0; i < jTable1.getRowCount(); i++) {
+                if(id == Integer.parseInt(jTable1.getModel().getValueAt(i, Constantes.COLUMN_ID).toString()) ){
                     add = false;
                 }
             }
+            
             if (add) {
                 model.addRow(new Object[]{textID.getText(), textNombre.getText()});
+                Element personas = document.getRootElement();
+                
+                Element persona = new Element("persona");
+                persona.setAttribute("id", textID.getText().toString());
+                Element nombrePersona = new Element("nombre");
+                persona.addContent(nombrePersona);
+                nombrePersona.addContent(textNombre.getText());
+                personas.addContent(persona);
+
             } else {
                 JOptionPane.showMessageDialog(this, "El id ya se encuentra en la lista");
             }
@@ -338,6 +370,21 @@ public class FramePersonas extends javax.swing.JFrame {
 
     }//GEN-LAST:event_botonCrearActionPerformed
 
+    private void cargarTabla(Document document1){
+        Element personasXml = document1.getRootElement();
+
+            List<Element> listaPersonas = personasXml.getChildren("persona");
+            
+            DefaultTableModel model = ((DefaultTableModel) jTable1.getModel());
+  
+            for (int i = 0; i <= listaPersonas.size() - 1; i++) {
+                Element element = listaPersonas.get(i);
+                model.addRow(new Object[]{element.getAttributeValue("id"), element.getChildText("nombre")});
+               
+            }
+    }
+    
+    
     private HashMap<Integer, Persona> deTablaAArray() {
         HashMap<Integer, Persona> personas = new HashMap<>();
         Persona p = null;
@@ -406,11 +453,8 @@ public class FramePersonas extends javax.swing.JFrame {
     }
 
     private void botonGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonGuardarActionPerformed
-        String nombre = "personas";
-        HashMap<Integer, Persona> personas = deTablaAArray();
-        personasMemoria = personas;
-        FicherosDatos fd = new FicherosDatos();
-        fd.guardarPersonasXML(this.rutaBD + "/" + nombre, personasMemoria);
+        
+        fd.guardarPersonasXML(document, this.rutaBD + "/personas");
 
     }//GEN-LAST:event_botonGuardarActionPerformed
 
@@ -422,9 +466,9 @@ public class FramePersonas extends javax.swing.JFrame {
         if (f.exists()) {
             
             FicherosDatos fd = new FicherosDatos();
-            HashMap<Integer, Persona> personas = fd.cargarPersonasXML(this.rutaBD + "/" + nombre);
-            personasMemoria = personas;
-            deArrayATabla(personas);
+           // HashMap<Integer, Persona> personas = fd.cargarPersonasXML(this.rutaBD + "/" + nombre);
+            //personasMemoria = personas;
+            //deArrayATabla(personas);
         } else {
             JOptionPane.showMessageDialog(this, "No hay ningun archivo para cargar.");
         }
@@ -444,7 +488,7 @@ public class FramePersonas extends javax.swing.JFrame {
         personasMemoria = deTablaAArray();
         FicherosDatos f = new FicherosDatos();
         String nombre = "personas";
-        f.guardarPersonasXML(this.rutaBD + "/" + nombre, personasMemoria);
+        //f.guardarPersonasXML(this.rutaBD + "/" + nombre, personasMemoria);
         f.borrarCompras(idEliminar, rutaBD);
     }//GEN-LAST:event_botonBorrarActionPerformed
 
@@ -506,7 +550,7 @@ public class FramePersonas extends javax.swing.JFrame {
         
               
     }//GEN-LAST:event_botonVerComprasActionPerformed
-    private String rutaBD = null;
+    
 
     private void leerProperties() {
         FileReader file = null;
@@ -543,7 +587,7 @@ public class FramePersonas extends javax.swing.JFrame {
         String nombre = Integer.toString(idActivo);
         HashMap<Integer, Compra> compras = deTablaAArrayCompras();
         FicherosDatos fd = new FicherosDatos();
-        fd.guardarComprasXML(this.rutaBD + "/" + nombre, compras);
+        //fd.guardarComprasXML(this.rutaBD + "/" + nombre, compras);
         Persona p = personasMemoria.get(idActivo);
         p.setCompras(compras);
         JOptionPane.showMessageDialog(jDialog1, "Compras guardadas.");
