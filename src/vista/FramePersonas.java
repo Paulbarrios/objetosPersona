@@ -64,7 +64,12 @@ public class FramePersonas extends javax.swing.JFrame {
 
             @Override
             public void tableChanged(TableModelEvent tme) {
-                //tme.getType() == TableModelEvent.UPDATE
+                System.out.println("cambia la tabla");
+                
+//                (DefaultTableModel) jTable1.getModel().removeRow(1);
+                
+                
+                System.out.println(jTable1.getValueAt( tme.getLastRow(), tme.getColumn()));
                 }
             });
         
@@ -358,6 +363,8 @@ public class FramePersonas extends javax.swing.JFrame {
                 persona.addContent(nombrePersona);
                 nombrePersona.addContent(textNombre.getText());
                 personas.addContent(persona);
+                Element compras = new Element("compras");
+                persona.addContent(compras);
 
             } else {
                 JOptionPane.showMessageDialog(this, "El id ya se encuentra en la lista");
