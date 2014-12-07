@@ -4,11 +4,9 @@
  */
 package vista;
 
-import datos.Compra;
-import datos.Persona;
+
 import java.io.File;
 import java.io.FileReader;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -22,6 +20,9 @@ import javax.swing.table.DefaultTableModel;
 import negocio.FicherosDatos;
 import org.jdom2.Document;
 import org.jdom2.Element;
+import org.jdom2.filter.Filters;
+import org.jdom2.xpath.XPathExpression;
+import org.jdom2.xpath.XPathFactory;
 import util.Constantes;
 
 /**
@@ -40,7 +41,7 @@ public class FramePersonas extends javax.swing.JFrame {
     FicherosDatos fd = new FicherosDatos();
     
     int idActivo ;
-    private HashMap<Integer, Persona> personasMemoria;
+
     
     public FramePersonas() {
         leerProperties();
@@ -55,23 +56,43 @@ public class FramePersonas extends javax.swing.JFrame {
         
         if(new File(this.rutaBD + "/personas").exists()){
             this.document = fd.cargarPersonasXML(this.rutaBD + "/personas");
-            cargarTabla(document);
+            cargarTablaPersonas(document);
         }else{
             this.document = new Document(new Element("Personas"));
         }
-
+        
         jTable1.getModel().addTableModelListener(new TableModelListener() {
-
+            DefaultTableModel model = (DefaultTableModel) jTable1.getModel();
             @Override
             public void tableChanged(TableModelEvent tme) {
-                System.out.println("cambia la tabla");
                 
-//                (DefaultTableModel) jTable1.getModel().removeRow(1);
+                if(tme.getType() == TableModelEvent.UPDATE){
+                     Element personas = document.getRootElement();
+                
+                    XPathFactory xFactory = XPathFactory.instance();
+                    XPathExpression<Element> expr = null;
+                        expr = xFactory.compile("//persona", Filters.element());
+                    List<Element> links = expr.evaluate(document);
+
+                    Element seleccionado = links.get(tme.getLastRow());
+                    Element padre = seleccionado.getParentElement();
+                    padre.removeContent(seleccionado);
+
+                    Element persona = new Element("persona");
+                    persona.setAttribute("id", jTable1.getValueAt(tme.getLastRow(), Constantes.COLUMN_ID).toString());
+                    Element nombrePersona = new Element("nombre");
+                    persona.addContent(nombrePersona);
+                    nombrePersona.addContent(jTable1.getValueAt(tme.getLastRow(), Constantes.COLUMN_NOMBRE).toString());
+                    personas.addContent(persona);
+                    Element compras = new Element("compras");
+                    persona.addContent(compras);
+                }
+               
                 
                 
-                System.out.println(jTable1.getValueAt( tme.getLastRow(), tme.getColumn()));
                 }
             });
+       
         
 
         jTable1.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -115,7 +136,6 @@ public class FramePersonas extends javax.swing.JFrame {
         textContent = new javax.swing.JTextField();
         jLabel3 = new javax.swing.JLabel();
         jLabel4 = new javax.swing.JLabel();
-        botonGuardarCompras = new javax.swing.JButton();
         jScrollPane1 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
         textID = new javax.swing.JTextField();
@@ -127,7 +147,6 @@ public class FramePersonas extends javax.swing.JFrame {
         botonCargar = new javax.swing.JButton();
         botonGuardar = new javax.swing.JButton();
         botonVerCompras = new javax.swing.JButton();
-        jComboTipo = new javax.swing.JComboBox();
 
         jDialog1.setAlwaysOnTop(true);
         jDialog1.setBounds(new java.awt.Rectangle(100, 100, 400, 400));
@@ -164,13 +183,6 @@ public class FramePersonas extends javax.swing.JFrame {
 
         jLabel4.setText("Concepto");
 
-        botonGuardarCompras.setText("Guardar");
-        botonGuardarCompras.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                botonGuardarComprasActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout jDialog1Layout = new javax.swing.GroupLayout(jDialog1.getContentPane());
         jDialog1.getContentPane().setLayout(jDialog1Layout);
         jDialog1Layout.setHorizontalGroup(
@@ -180,8 +192,7 @@ public class FramePersonas extends javax.swing.JFrame {
                 .addGroup(jDialog1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addGroup(jDialog1Layout.createSequentialGroup()
-                        .addComponent(botonGuardarCompras)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 114, Short.MAX_VALUE)
+                        .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(botonCrearCompra)
                         .addGap(18, 18, 18)
                         .addComponent(botonBorrarCompra))
@@ -192,7 +203,7 @@ public class FramePersonas extends javax.swing.JFrame {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(jLabel4)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(textContent)))
+                        .addComponent(textContent, javax.swing.GroupLayout.DEFAULT_SIZE, 146, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         jDialog1Layout.setVerticalGroup(
@@ -209,8 +220,7 @@ public class FramePersonas extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jDialog1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(botonCrearCompra)
-                    .addComponent(botonBorrarCompra)
-                    .addComponent(botonGuardarCompras))
+                    .addComponent(botonBorrarCompra))
                 .addContainerGap())
         );
 
@@ -269,13 +279,6 @@ public class FramePersonas extends javax.swing.JFrame {
             }
         });
 
-        jComboTipo.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "XSTREAM", "JAXB", "XML", "SERIALIZADO" }));
-        jComboTipo.addItemListener(new java.awt.event.ItemListener() {
-            public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                jComboTipoItemStateChanged(evt);
-            }
-        });
-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -301,9 +304,7 @@ public class FramePersonas extends javax.swing.JFrame {
                                 .addGap(12, 12, 12)
                                 .addComponent(botonGuardar)))))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(botonVerCompras, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jComboTipo, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(botonVerCompras, javax.swing.GroupLayout.PREFERRED_SIZE, 92, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addContainerGap(55, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -317,15 +318,10 @@ public class FramePersonas extends javax.swing.JFrame {
                         .addGap(45, 45, 45)
                         .addComponent(botonVerCompras)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(jLabel1)
-                            .addComponent(jLabel2))
-                        .addGap(3, 3, 3))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addComponent(jComboTipo, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(7, 7, 7)))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel2))
+                .addGap(13, 13, 13)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(textID, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(textNombre, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -377,7 +373,7 @@ public class FramePersonas extends javax.swing.JFrame {
 
     }//GEN-LAST:event_botonCrearActionPerformed
 
-    private void cargarTabla(Document document1){
+    private void cargarTablaPersonas(Document document1){
         Element personasXml = document1.getRootElement();
 
             List<Element> listaPersonas = personasXml.getChildren("persona");
@@ -391,73 +387,20 @@ public class FramePersonas extends javax.swing.JFrame {
             }
     }
     
-    
-    private HashMap<Integer, Persona> deTablaAArray() {
-        HashMap<Integer, Persona> personas = new HashMap<>();
-        Persona p = null;
+    private void cargarTablaCompras(Element persona){
+            Element compras = persona.getChildren("compras").get(0);
 
-
-        for (int i = 0; i < jTable1.getRowCount(); i++) {
-
-            p = new Persona(
-                    Integer.parseInt(jTable1.getModel().getValueAt(i, Constantes.COLUMN_ID).toString()),
-                    (String) jTable1.getModel().getValueAt(i, Constantes.COLUMN_NOMBRE));
-
-            personas.put(p.getId(), p);
-        }
-
-
-        return personas;
-
-    }
-    
-    private HashMap<Integer, Compra> deTablaAArrayCompras() {
-        HashMap<Integer, Compra> compras = new HashMap<>();
-        Compra c = null;
-        for (int i = 0; i < jTable2.getRowCount(); i++) {
-
-            c = new Compra(i,
-                    Integer.parseInt(jTable2.getModel().getValueAt(i, Constantes.COLUMN_CANTIDAD).toString()),
-                    (String) jTable2.getModel().getValueAt(i, Constantes.COLUMN_CONTENT));
-
-            compras.put(c.getId(), c);
-        }
-
-
-        return compras;
-
-    }
-
-
-    private void deArrayATabla(HashMap<Integer, Persona> personas) {
-        DefaultTableModel model = ((DefaultTableModel) jTable1.getModel());
-
-
-        for (Persona p : personas.values()) {
-            model.addRow(new Object[]{p.getId(), p.getNombre()});
-        }
-
-
-    }
-    
-    private void deArrayATablaCompras(HashMap<Integer, Compra> compras) {
-        DefaultTableModel model = new DefaultTableModel();
-        jTable2.removeAll();
-        
-            model.addColumn("CANTIDAD");
-            model.addColumn("CONTENT");
+            List<Element> listaCompras = compras.getChildren("compra");
             
-          
-
-        for (Compra p : compras.values()) {
-            model.addRow(new Object[]{p.getCantidad(), p.getConcepto()});
-        }
-        jTable2.setModel(model);
-        
-       
-
-
+            DefaultTableModel model = ((DefaultTableModel) jTable2.getModel());
+  
+            for (int i = 0; i <= listaCompras.size() - 1; i++) {
+                Element element = listaCompras.get(i);
+                model.addRow(new Object[]{element.getChildText("cantidad"), element.getChildText("concepto")});
+               
+            }
     }
+   
 
     private void botonGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonGuardarActionPerformed
         
@@ -468,15 +411,11 @@ public class FramePersonas extends javax.swing.JFrame {
     private void botonCargarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonCargarActionPerformed
         DefaultTableModel model = ((DefaultTableModel) jTable1.getModel());
         model.setRowCount(0);
-        String nombre = "personas";
-        File f = new File(this.rutaBD + "/" + nombre);
-        if (f.exists()) {
-            
-            FicherosDatos fd = new FicherosDatos();
-           // HashMap<Integer, Persona> personas = fd.cargarPersonasXML(this.rutaBD + "/" + nombre);
-            //personasMemoria = personas;
-            //deArrayATabla(personas);
-        } else {
+        if(new File(this.rutaBD + "/personas").exists()){
+            this.document = fd.cargarPersonasXML(this.rutaBD + "/personas");
+            cargarTablaPersonas(document);
+        }
+         else {
             JOptionPane.showMessageDialog(this, "No hay ningun archivo para cargar.");
         }
 
@@ -485,48 +424,49 @@ public class FramePersonas extends javax.swing.JFrame {
     private void botonBorrarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonBorrarActionPerformed
         DefaultTableModel model = ((DefaultTableModel) jTable1.getModel());
         int seleccionada = jTable1.getSelectedRow();
-        Integer idEliminar = (Integer) jTable1.getModel().getValueAt(seleccionada, Constantes.COLUMN_ID);
 
         if (seleccionada > -1) {
             model.removeRow(seleccionada);
+            
+            XPathFactory xFactory = XPathFactory.instance();
+            XPathExpression<Element> expr = null;
+                expr = xFactory.compile("//persona", Filters.element());
+            List<Element> links = expr.evaluate(document);
+
+            Element seleccionado = links.get(seleccionada);
+            Element padre = seleccionado.getParentElement();
+            padre.removeContent(seleccionado);
+            
         } else {
             JOptionPane.showMessageDialog(this, "Seleccione una fila");
         }
-        personasMemoria = deTablaAArray();
-        FicherosDatos f = new FicherosDatos();
-        String nombre = "personas";
-        //f.guardarPersonasXML(this.rutaBD + "/" + nombre, personasMemoria);
-        f.borrarCompras(idEliminar, rutaBD);
     }//GEN-LAST:event_botonBorrarActionPerformed
 
     private void botonVerComprasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonVerComprasActionPerformed
-        HashMap<Integer, Compra> mapCompras = null;
-        FicherosDatos fd = new FicherosDatos();
+        fd.guardarPersonasXML(document, this.rutaBD + "/personas");
         int seleccionada = jTable1.getSelectedRow();
         
         
         if(seleccionada == -1){
             JOptionPane.showMessageDialog(this, "Seleccione una fila");
         }else{
-            File archivoPersonas = new File(this.rutaBD + "/" + "personas");
-            if (archivoPersonas.exists()) {
-                if (personasMemoria != null) {
-                        String idPersona = jTable1.getModel().getValueAt(seleccionada, Constantes.COLUMN_ID).toString();
-                        idActivo = Integer.parseInt(idPersona);
-                        if (personasMemoria.containsKey(idActivo)) {
-                            Persona p = personasMemoria.get(idActivo);
-                            if (p.getCompras() == null) {
-                                File archivoCompra = new File(this.rutaBD + "/" + idPersona);
-                                if (archivoCompra.exists()) {
-                                    mapCompras = fd.cargarCompraXml(this.rutaBD + "/" + idPersona);
-                                } else {
-                                    mapCompras = new HashMap<Integer, Compra>();
-                                }
-                            } else {
-                                mapCompras = p.getCompras();
-                            }   
+            idActivo = Integer.parseInt(jTable1.getModel().getValueAt(seleccionada, Constantes.COLUMN_ID).toString());
+             
+            XPathFactory xFactory = XPathFactory.instance();
+            XPathExpression<Element> expr = null;
+                expr = xFactory.compile("//persona", Filters.element());
+            List<Element> links = expr.evaluate(document);
 
-                            deArrayATablaCompras(mapCompras);
+            Element seleccionado = links.get(seleccionada);
+            
+            
+            DefaultTableModel model = new DefaultTableModel();
+            jTable2.removeAll();
+        
+            model.addColumn("CANTIDAD");
+            model.addColumn("CONTENT");
+            jTable2.setModel(model);
+            cargarTablaCompras(seleccionado);
 
                             jTable2.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
                                 @Override
@@ -543,16 +483,7 @@ public class FramePersonas extends javax.swing.JFrame {
                             });
 
                             jDialog1.setVisible(true);
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Tienes que guardar la nuevas personas antes de ver las compras");
-                    }
-                   
-                } else {
-                    JOptionPane.showMessageDialog(this, "Tienes que guardar antes de ver las compras");
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Tienes que guardar antes de ver las compras");
-            }
+
         }
         
               
@@ -567,7 +498,6 @@ public class FramePersonas extends javax.swing.JFrame {
             file = new FileReader(Constantes.FICHERO_PROPERTIES);
             p.load(file);
             rutaBD = p.getProperty(Constantes.RUTABD_PROPERTY);
-            //JOptionPane.showMessageDialog(this, rutaBD);
 
             file.close();
         } catch (Exception ex) {
@@ -583,6 +513,26 @@ public class FramePersonas extends javax.swing.JFrame {
         
             try{
                 model.addRow(new Object[]{Integer.parseInt(textCantidad.getText()), textContent.getText()});
+                
+                XPathFactory xFactory = XPathFactory.instance();
+                XPathExpression<Element> expr = null;
+                    expr = xFactory.compile("//Personas/persona[@id='"+idActivo+"']", Filters.element());
+                List<Element> links = expr.evaluate(document);
+                
+                 Element seleccionado = links.get(0);
+                 Element compras = seleccionado.getChild("compras");
+                
+                 Element compra = new Element("compra");
+                 Element cantidad = new Element("cantidad");
+                 Element concepto = new Element("concepto");
+                 cantidad.addContent(textCantidad.getText());
+                 concepto.addContent(textContent.getText());
+                 compra.addContent(cantidad);
+                 compra.addContent(concepto);
+                 compras.addContent(compra);
+                 
+                
+
             } catch (NumberFormatException numberFormatException) {
                 JOptionPane.showMessageDialog(jDialog1, "Inserta un numero en campo de cantidad");
 
@@ -590,28 +540,27 @@ public class FramePersonas extends javax.swing.JFrame {
             jTable2.setModel(model);
     }//GEN-LAST:event_botonCrearCompraActionPerformed
 
-    private void botonGuardarComprasActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonGuardarComprasActionPerformed
-        String nombre = Integer.toString(idActivo);
-        HashMap<Integer, Compra> compras = deTablaAArrayCompras();
-        FicherosDatos fd = new FicherosDatos();
-        //fd.guardarComprasXML(this.rutaBD + "/" + nombre, compras);
-        Persona p = personasMemoria.get(idActivo);
-        p.setCompras(compras);
-        JOptionPane.showMessageDialog(jDialog1, "Compras guardadas.");
-    }//GEN-LAST:event_botonGuardarComprasActionPerformed
-
     private void botonBorrarCompraActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_botonBorrarCompraActionPerformed
-        // TODO add your handling code here:
-        DefaultTableModel model = (DefaultTableModel) jTable2.getModel();
-        model.removeRow(jTable2.getSelectedRow());
-        jTable2.setModel(model);
-    }//GEN-LAST:event_botonBorrarCompraActionPerformed
 
-    private void jComboTipoItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jComboTipoItemStateChanged
-       String tipo = jComboTipo.getSelectedItem().toString();
-        FicherosDatos fd = new FicherosDatos();
-        fd.setTipo(tipo);
-    }//GEN-LAST:event_jComboTipoItemStateChanged
+        DefaultTableModel model = ((DefaultTableModel) jTable2.getModel());
+        int seleccionada = jTable2.getSelectedRow();
+
+        if (seleccionada > -1) {
+            model.removeRow(seleccionada);
+            
+            XPathFactory xFactory = XPathFactory.instance();
+            XPathExpression<Element> expr = null;
+                expr = xFactory.compile("//Personas/persona[@id='"+idActivo+"']/compras/compra", Filters.element());
+            List<Element> links = expr.evaluate(document);
+
+            Element seleccionado = links.get(seleccionada);
+            Element padre = seleccionado.getParentElement();
+            padre.removeContent(seleccionado);
+            
+        } else {
+            JOptionPane.showMessageDialog(this, "Seleccione una fila");
+        }
+    }//GEN-LAST:event_botonBorrarCompraActionPerformed
 
     /**
      * @param args the command line arguments
@@ -654,9 +603,7 @@ public class FramePersonas extends javax.swing.JFrame {
     private javax.swing.JButton botonCrear;
     private javax.swing.JButton botonCrearCompra;
     private javax.swing.JButton botonGuardar;
-    private javax.swing.JButton botonGuardarCompras;
     private javax.swing.JButton botonVerCompras;
-    private javax.swing.JComboBox jComboTipo;
     private javax.swing.JDialog jDialog1;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
